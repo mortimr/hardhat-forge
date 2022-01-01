@@ -1,7 +1,7 @@
 {
-  "name": "hardhat-ts-plugin-boilerplate",
+  "name": "hardhat-foundry",
   "version": "0.0.1",
-  "description": "Hardhat TypeScript plugin boilerplate",
+  "description": "Hardhat + Foundry",
   "repository": "github:nomiclabs/hardhat-ts-plugin-boilerplate",
   "author": "Nomic Labs LLC",
   "license": "MIT",
