@@ -11,7 +11,7 @@ import "./type-extensions";
 
 const checkIfVersionExists = async (version: string): Promise<boolean> => {
   const forgeVersionOutput = await getInstalledBinaryVersions();
-  return forgeVersionOutput.toLowerCase().includes(version.toLowerCase());
+  return forgeVersionOutput !== null && forgeVersionOutput.toLowerCase().includes(version.toLowerCase());
 };
 
 const getInstalledBinaryVersions = async (): Promise<string> =>
