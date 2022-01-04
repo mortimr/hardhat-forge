@@ -79,6 +79,8 @@ const forgeTest = async (): Promise<void> =>
       "--hardhat",
       "--out",
       "forge-artifacts",
+      "--verbosity",
+      "3"
     ]);
 
     cargoInstall.stdout.on("data", (data) => {
