@@ -1,6 +1,6 @@
 {
   "name": "hardhat-foundry",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Hardhat + Foundry",
   "repository": "github:nomiclabs/hardhat-ts-plugin-boilerplate",
   "author": "Nomic Labs LLC",
