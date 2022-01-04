@@ -11,7 +11,10 @@ import "./type-extensions";
 
 const checkIfVersionExists = async (version: string): Promise<boolean> => {
   const forgeVersionOutput = await getInstalledBinaryVersions();
-  return forgeVersionOutput !== null && forgeVersionOutput.toLowerCase().includes(version.toLowerCase());
+  return (
+    forgeVersionOutput !== null &&
+    forgeVersionOutput.toLowerCase().includes(version.toLowerCase())
+  );
 };
 
 const getInstalledBinaryVersions = async (): Promise<string> =>
@@ -72,15 +75,58 @@ const installForgeVersion = async (
     });
   });
 
-const forgeTest = async (): Promise<void> =>
+const rmArtifacts = async (): Promise<void> =>
+  new Promise((ok, ko) => {
+    const cargoInstall = spawn("rm", ["-rf", "hardhat-artifacts"]);
+
+    cargoInstall.stdout.on("data", (data) => {
+      process.stdout.write(data);
+    });
+
+    cargoInstall.stderr.on("data", (data) => {
+      process.stderr.write(data);
+    });
+
+    cargoInstall.on("close", (code: number) => {
+      if (code === 0) {
+        return ok();
+      } else {
+        return ko(new Error(`Process exited with error code ${code}`));
+      }
+    });
+  });
+
+const forgeClean = async (): Promise<void> =>
+  new Promise((ok, ko) => {
+    const cargoInstall = spawn("forge", ["clean"]);
+
+    cargoInstall.stdout.on("data", (data) => {
+      process.stdout.write(data);
+    });
+
+    cargoInstall.stderr.on("data", (data) => {
+      process.stderr.write(data);
+    });
+
+    cargoInstall.on("close", (code: number) => {
+      if (code === 0) {
+        return ok();
+      } else {
+        return ko(new Error(`Process exited with error code ${code}`));
+      }
+    });
+  });
+
+const forgeTest = async (verbosity: number): Promise<void> =>
   new Promise((ok, ko) => {
     const cargoInstall = spawn("forge", [
       "test",
       "--hardhat",
+      "--force",
       "--out",
       "forge-artifacts",
       "--verbosity",
-      "3"
+      verbosity,
     ]);
 
     cargoInstall.stdout.on("data", (data) => {
@@ -101,10 +147,10 @@ const forgeTest = async (): Promise<void> =>
   });
 
 const checkAndInstall = async (hre) => {
-  if (!(await checkIfVersionExists(hre.config.forgeVersion))) {
+  if (!(await checkIfVersionExists(hre.config.forge.version))) {
     try {
-      await installForgeVersion(hre.config.forgeVersion);
-      console.log(`Installed forge (version=${hre.config.forgeVersion})`);
+      await installForgeVersion(hre.config.forge.version);
+      console.log(`Installed forge (version=${hre.config.forge.version})`);
     } catch (e) {
       console.error(`An error occured while installing foundry`);
       console.error(e);
@@ -118,7 +164,9 @@ task(
 ).setAction(async (args, hre) => {
   await checkAndInstall(hre);
   try {
-    await forgeTest();
+    await rmArtifacts();
+    await forgeClean();
+    await forgeTest(hre.config.forge.verbosity);
   } catch (e) {}
 });
 
@@ -127,9 +175,9 @@ task(
   "Forces installation of configured forge version"
 ).setAction(async (args, hre) => {
   try {
-    console.log(`Force installing forge (version=${hre.config.forgeVersion})`);
-    await installForgeVersion(hre.config.forgeVersion, true);
-    console.log(`Force installed forge (version=${hre.config.forgeVersion})`);
+    console.log(`Force installing forge (version=${hre.config.forge.version})`);
+    await installForgeVersion(hre.config.forge.version, true);
+    console.log(`Force installed forge (version=${hre.config.forge.version})`);
   } catch (e) {
     console.error(`An error occured while installing foundry`);
     console.error(e);
@@ -140,7 +188,15 @@ const DEFAULT_FORGE_COMMIT_HASH = "ecdafc5";
 
 extendConfig(
   (config: HardhatConfig, userConfig: Readonly<HardhatUserConfig>) => {
-    config.forgeVersion = userConfig.forgeVersion || DEFAULT_FORGE_COMMIT_HASH;
-    // retrieve version and check
+    let version = DEFAULT_FORGE_COMMIT_HASH;
+    let verbosity = 3;
+    if (userConfig.forge) {
+      version = userConfig.forge.version || DEFAULT_FORGE_COMMIT_HASH;
+      verbosity = userConfig.forge.verbosity || 3;
+    }
+    config.forge = {
+      version,
+      verbosity,
+    };
   }
 );
